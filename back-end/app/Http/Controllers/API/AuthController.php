@@ -7,7 +7,7 @@ use Illuminate\Http\Request; // Vẫn giữ lại cho hàm logout
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
-
+use App\Traits\ApiResponser;
 // Import 2 class Request vừa tạo
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
@@ -17,6 +17,7 @@ class AuthController extends Controller
     /**
      * Xử lý yêu cầu đăng ký của người dùng.
      */
+    use ApiResponser;
     public function register(RegisterRequest $request)
     {
         // Lấy dữ liệu đã được validate từ RegisterRequest
@@ -44,12 +45,7 @@ class AuthController extends Controller
         // 3. Tạo token và trả về response
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Đăng ký thành công!',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user
-        ], 201);
+        return $this->authResponse($token, $user, 'Đăng ký thành công!', 201);
     }
 
     /**
@@ -70,12 +66,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Đăng nhập thành công!',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user
-        ]);
+        return $this->authResponse($token, $user, 'Đăng nhập thành công!');
     }
 
     /**
@@ -85,8 +76,6 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Đăng xuất thành công!'
-        ]);
+          return $this->successResponse(null, 'Đăng xuất thành công!');
     }
 }
