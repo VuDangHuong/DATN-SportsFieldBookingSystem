@@ -17,7 +17,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@tlu.edu.vn'], 
             [
                 'full_name' => 'Administrator',
-                'password' => Hash::make('dh@3082003'),
+                'password' => Hash::make('12345679'),
                 'phone' => '0123456789',
                 'role' => 'ADMIN',
             ]
