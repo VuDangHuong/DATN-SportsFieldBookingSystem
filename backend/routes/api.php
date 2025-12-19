@@ -25,7 +25,8 @@ Route::prefix('auth')->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         // API tạo tài khoản cho Giảng viên/Admin (Thay thế register)
-        Route::post('/users', [UserController::class, 'store']); 
+        Route::post('/users', [UserController::class, 'store']);
+        Route::post('/users/import', [UserController::class, 'import']);
     });
 
     // Lưu ý: Nếu Admin cũng cần quyền làm việc của GV, có thể để 'role:lecturer,admin'

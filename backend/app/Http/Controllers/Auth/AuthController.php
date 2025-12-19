@@ -128,7 +128,13 @@ class AuthController extends Controller
     // --- API 1: Gửi yêu cầu quên mật khẩu ---
 public function forgotPassword(Request $request)
 {
-    $request->validate(['email' => 'required|email']);
+    $request->validate([
+        'email' => 'required|email|exists:users,email' 
+    ], [
+        'email.exists' => 'Địa chỉ email này không tồn tại trong hệ thống.',
+        'email.email' => 'Email không đúng định dạng.',
+        'email.required' => 'Vui lòng nhập email.'
+    ]);
 
     // Gửi link reset password (Laravel tự xử lý token và bảng password_reset_tokens)
     $status = Password::sendResetLink($request->only('email'));
@@ -158,7 +164,7 @@ public function resetPassword(Request $request)
             ])->save();
             
             // Có thể thêm dòng này để xóa hết token cũ (bảo mật)
-            // $user->tokens()->delete(); 
+             $user->tokens()->delete(); 
         }
     );
 

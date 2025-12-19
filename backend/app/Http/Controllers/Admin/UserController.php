@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Auth\User;
 use Illuminate\Support\Facades\Hash;
-
+use App\Imports\StudentsImport;
+use Maatwebsite\Excel\Facades\Excel;
 class UserController extends Controller
 {
     public function store(Request $request) 
@@ -40,4 +41,29 @@ class UserController extends Controller
             'data' => $user
         ], 201);
     }
+    public function import(Request $request) 
+{
+    // 1. Validate file gửi lên
+    $request->validate([
+        'file' => 'required|mimes:xlsx,xls,csv|max:2048', // Chỉ nhận file excel, tối đa 2MB
+    ]);
+
+    try {
+        // 2. Thực hiện Import
+        Excel::import(new StudentsImport, $request->file('file'));
+        
+        return response()->json([
+            'message' => 'Import danh sách sinh viên thành công!',
+        ]);
+    } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+        // Bắt lỗi nếu dữ liệu trong Excel bị trùng hoặc sai
+        $failures = $e->failures();
+        return response()->json([
+            'message' => 'Dữ liệu trong file Excel bị lỗi.',
+            'errors' => $failures
+        ], 422);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+    }
+}
 }
