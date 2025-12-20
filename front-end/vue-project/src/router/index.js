@@ -1,63 +1,82 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import { useAuthStore } from '@/stores/auth'
-
-// SỬA LẠI ĐƯỜNG DẪN IMPORT CHO ĐÚNG VỚI CẤU TRÚC THƯ MỤC
-// import LoginView from '../views/auth/LoginView.vue'
-// import RegisterView from '../views/auth/RegisterView.vue'
-// import ForgotPasswordView from '../views/auth/ForgotPasswordView.vue'
-// import ResetPasswordView from '../views/auth/ResetPasswordView.vue'
+import { useAuthStore } from '@/stores/auth'
+// Import Layout
+import AdminLayout from '@/layouts/AdminLayout.vue'
+import LoginView from '@/views/auth/LoginView.vue'
 import DashboardView from '../DashboardView.vue'
 
+import AdminDashboard from '@/views/admin/AdminDashboard.vue'
+import UserManagement from '@/views/admin/UserManagement.vue'
+import ClassManagement from '@/views/admin/ClassManagement.vue'
+import MasterData from '@/views/admin/MasterData.vue'
+import SystemConfig from '@/views/admin/SystemConfig.vue'
+import Reports from '@/views/admin/Reports.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // {
-    //   path: '/login',
-    //   name: 'login',
-    //   component: LoginView,
-    //   meta: { requiresGuest: true },
-    // },
-    // {
-    //   path: '/register',
-    //   name: 'register',
-    //   component: RegisterView,
-    //   meta: { requiresGuest: true },
-    // },
-    // {
-    //   path: '/forgot-password',
-    //   name: 'forgot-password',
-    //   component: ForgotPasswordView,
-    //   meta: { requiresGuest: true },
-    // },
-    // {
-    //   path: '/reset-password',
-    //   name: 'reset-password',
-    //   component: ResetPasswordView,
-    //   meta: { requiresGuest: true },
-    // },
+    { path: '/', redirect: '/login' },
+
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { requiresGuest: true },
+    },
+    // --- ADMIN ROUTES ---
+    {
+      path: '/admin',
+      component: AdminLayout, // Dùng Layout chung
+      meta: { requiresAuth: true, role: 'admin' }, // Thêm check role nếu cần
+      children: [
+        {
+          path: 'dashboard', // /admin/dashboard
+          name: 'admin-dashboard',
+          component: AdminDashboard,
+        },
+        {
+          path: 'users', // /admin/users
+          name: 'user-management',
+          component: UserManagement,
+        },
+        {
+          path: 'classes',
+          name: 'class-management',
+          component: ClassManagement,
+        },
+        {
+          path: 'master-data',
+          name: 'master-data',
+          component: MasterData,
+        },
+        {
+          path: 'settings',
+          name: 'system-config',
+          component: SystemConfig,
+        },
+        {
+          path: 'reports',
+          name: 'reports',
+          component: Reports,
+        },
+      ],
+    },
     {
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
       meta: { requiresAuth: true },
     },
-    // Chuyển hướng mặc định
-    {
-      path: '/',
-      redirect: '/dashboard',
-    },
   ],
 })
 
-// Navigation Guard (giữ nguyên)
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const isAuthenticated = authStore.isAuthenticated
 
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'login' })
+    next('/login')
   } else if (to.meta.requiresGuest && isAuthenticated) {
-    next({ name: 'dashboard' })
+    next('/dashboard')
   } else {
     next()
   }
