@@ -26,6 +26,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         // API tạo tài khoản cho Giảng viên/Admin (Thay thế register)
         Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/{id}', [UserController::class, 'show']);   // Xem chi tiết
+        Route::put('/users/{id}', [UserController::class, 'update']); // Cập nhật
+        Route::delete('/users/{id}', [UserController::class, 'destroy']); // Xóa
         Route::post('/users/import', [UserController::class, 'import']);
     });
 

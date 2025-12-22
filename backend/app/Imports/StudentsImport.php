@@ -15,12 +15,12 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
     public function model(array $row)
     {
         return new User([
-            'code'      => $row['code'],     // Tên cột trong file Excel
+            'code'      => $row['code'],
             'name'      => $row['name'],
             'email'     => $row['email'],
-            'password'  => Hash::make($row['password']),             // QUAN TRỌNG: Để trống mật khẩu
-            'role'      => 'student',        // Mặc định là sinh viên
-            'is_active' => true,            // Chưa kích hoạt
+            'password'  => Hash::make($row['password']),
+            'role'      => $row['role'] ?? 'student',
+            'is_active' => true,     
         ]);
     }
 
