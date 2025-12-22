@@ -1,7 +1,8 @@
 <script setup>
-// Không cần script gì đặc biệt ở đây
+import ToastList from '@/components/ToastList.vue'
 </script>
 
 <template>
+  <ToastList />
   <router-view />
 </template>
