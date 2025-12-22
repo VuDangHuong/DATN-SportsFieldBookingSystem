@@ -11,7 +11,6 @@ import ClassManagement from '@/views/admin/ClassManagement.vue'
 import MasterData from '@/views/admin/MasterData.vue'
 import SystemConfig from '@/views/admin/SystemConfig.vue'
 import Reports from '@/views/admin/Reports.vue'
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
