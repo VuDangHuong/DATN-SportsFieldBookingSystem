@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\Auth\ChangePasswordRequest;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     /**
@@ -95,6 +97,38 @@ class AuthController extends Controller
     /**
      * API Lấy thông tin user hiện tại (Profile)
      */
+    public function updateAvatarById(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'avatar'  => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 2. Tìm User thật từ Database dựa vào ID gửi lên
+        $user = User::find($request->user_id);
+
+        //Xử lý Upload Avatar
+        if ($request->hasFile('avatar')) {
+            // Xóa ảnh cũ nếu tồn tại
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            $path = $request->file('avatar')->store('avatars', 'public');
+
+            $user->avatar = $path;
+            $user->save();
+        }
+
+        return response()->json([
+            'message' => 'Cập nhật ảnh đại diện thành công!',
+            'user'    => $user 
+        ]);
+    }
     public function me(Request $request)
     {
         return response()->json($request->user());

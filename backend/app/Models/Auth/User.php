@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models\Auth;
-
+use Illuminate\Support\Facades\Storage;
 // 1. QUAN TRỌNG: Phải dùng Authenticatable thay vì Model thường
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -46,6 +46,16 @@ class User extends Authenticatable
         'is_active' => 'boolean',
     ];
 
+    protected $appends = ['avatar_url'];
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar && Storage::disk('public')->exists($this->avatar)) {
+            return Storage::url($this->avatar);
+        }
+
+        // Trả về ảnh mặc định nếu chưa upload
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+    }
     // --- CÁC HÀM CHECK QUYỀN NHANH ---
     public function isAdmin() { return $this->role === 'admin'; }
     public function isLecturer() { return $this->role === 'lecturer'; }

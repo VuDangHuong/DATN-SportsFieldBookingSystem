@@ -19,6 +19,7 @@ Route::prefix('auth')->group(function () {
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/update-avatar', [AuthController::class, 'updateAvatarById']);
     });
 });
 
