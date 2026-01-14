@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
   // 2. Tạo User mới
   async function createUser(userData) {
     try {
-      const response = await userApi.update(userData)
+      const response = await userApi.create(userData)
       const successMessage = response.data.message
       await fetchUsers() // Load lại danh sách sau khi thêm
       return { success: true, message: successMessage }

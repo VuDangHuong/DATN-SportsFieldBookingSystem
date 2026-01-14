@@ -1,78 +1,145 @@
 <script setup>
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { computed } from 'vue'
+import SvgIcon from '@/components/icons/SVG.vue'
+
+const props = defineProps({
+  isMobileOpen: Boolean, // Nhận trạng thái từ Layout
+})
+
+const emit = defineEmits(['close-mobile']) // Gửi sự kiện đóng menu khi click link
 
 const route = useRoute()
+const isCollapsed = ref(false) // Trạng thái co giãn Desktop
 
-// Danh sách menu dựa trên 5 chức năng quản lý trong tài liệu
+const toggleSidebar = () => {
+  isCollapsed.value = !isCollapsed.value
+}
+
+// Khi click link trên mobile -> tự đóng menu
+const handleLinkClick = () => {
+  emit('close-mobile')
+}
+
 const menuItems = [
-  {
-    name: 'Dashboard',
-    path: '/admin/dashboard',
-    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-  },
-  {
-    name: 'Quản lý người dùng',
-    path: '/admin/users',
-    icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-  },
-  {
-    name: 'Phân công giảng dạy',
-    path: '/admin/classes',
-    icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
-  },
-  {
-    name: 'Quản lý danh mục',
-    path: '/admin/master-data',
-    icon: 'M4 6h16M4 10h16M4 14h16M4 18h16',
-  },
-  {
-    name: 'Cấu hình hệ thống',
-    path: '/admin/settings',
-    icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
-  },
-  {
-    name: 'Giám sát & Báo cáo',
-    path: '/admin/reports',
-    icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-  },
+  { name: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard' },
+  { name: 'Quản lý người dùng', path: '/admin/users', icon: 'users' },
+  { name: 'Quản lý lớp học phần', path: '/admin/classes', icon: 'classes' },
+  { name: 'Quản lý danh mục', path: '/admin/master-data', icon: 'master-data' },
+  { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: 'settings' },
+  { name: 'Giám sát & Báo cáo', path: '/admin/reports', icon: 'reports' },
 ]
 </script>
 
 <template>
-  <aside class="w-64 bg-blue-900 text-white min-h-screen flex flex-col shadow-lg">
-    <div class="h-16 flex items-center justify-center border-b border-blue-800 bg-blue-950">
-      <span class="text-xl font-bold tracking-wider">TLU ADMIN</span>
+  <aside
+    class="fixed inset-y-0 left-0 z-30 bg-blue-900 text-white shadow-lg transition-all duration-300 ease-in-out lg:static lg:translate-x-0"
+    :class="[
+      // Logic Mobile: Ẩn/Hiện dựa vào props
+      isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full',
+
+      // Logic Desktop: Co/Dãn
+      isCollapsed ? 'lg:w-20' : 'lg:w-64',
+    ]"
+  >
+    <div
+      class="h-16 flex items-center justify-center border-b border-blue-800 bg-blue-950 overflow-hidden whitespace-nowrap relative"
+    >
+      <button
+        @click="$emit('close-mobile')"
+        class="absolute right-4 lg:hidden text-blue-300 hover:text-white"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+
+      <transition name="fade" mode="out-in">
+        <span v-if="!isCollapsed" class="text-xl font-bold tracking-wider">TLU ADMIN</span>
+        <span v-else class="text-xl font-bold">TLU</span>
+      </transition>
     </div>
 
-    <nav class="flex-1 py-4">
+    <button
+      @click="toggleSidebar"
+      class="hidden lg:block absolute -right-3 top-20 bg-yellow-400 text-blue-900 rounded-full p-1 shadow-md hover:bg-yellow-300 transition-colors z-50 border-2 border-white"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4 transition-transform duration-300"
+        :class="isCollapsed ? 'rotate-180' : ''"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+
+    <nav class="flex-1 py-4 overflow-x-hidden overflow-y-auto">
       <ul>
         <li v-for="item in menuItems" :key="item.path" class="mb-1">
           <router-link
             :to="item.path"
-            class="flex items-center px-6 py-3 hover:bg-blue-800 transition-colors duration-200"
-            active-class="bg-blue-700 border-l-4 border-white"
+            @click="handleLinkClick"
+            class="flex items-center py-3 hover:bg-blue-800 transition-colors duration-200 group relative"
+            :class="[
+              isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-6',
+              route.path.startsWith(item.path)
+                ? 'bg-blue-800 border-l-4 border-yellow-400'
+                : 'border-l-4 border-transparent',
+            ]"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 mr-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                :d="item.icon"
+            <div class="relative flex items-center justify-center">
+              <SvgIcon
+                :name="item.icon"
+                class="transition-all duration-300"
+                :class="isCollapsed && !isMobileOpen ? 'h-6 w-6' : 'h-5 w-5 mr-3'"
               />
-            </svg>
-            <span class="font-medium">{{ item.name }}</span>
+            </div>
+
+            <span
+              class="whitespace-nowrap transition-all duration-300 origin-left"
+              :class="
+                isCollapsed && !isMobileOpen
+                  ? 'lg:opacity-0 lg:w-0 lg:hidden'
+                  : 'opacity-100 w-auto'
+              "
+            >
+              {{ item.name }}
+            </span>
+
+            <div
+              v-if="isCollapsed"
+              class="hidden lg:block absolute left-full top-1/2 transform -translate-y-1/2 ml-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap shadow-lg"
+            >
+              {{ item.name }}
+            </div>
           </router-link>
         </li>
       </ul>
     </nav>
-
-    <div class="p-4 border-t border-blue-800 text-xs text-center text-blue-300">System v1.0</div>
   </aside>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

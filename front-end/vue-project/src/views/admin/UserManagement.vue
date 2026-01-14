@@ -216,13 +216,13 @@ onMounted(() => {
     </div>
 
     <div class="bg-white p-4 rounded-lg shadow mb-6 flex flex-wrap gap-4 items-center">
-      <div class="flex bg-gray-100 p-1 rounded-lg">
+      <div class="flex bg-gray-100 p-1 rounded-lg overflow-x-auto max-w-full">
         <button
           v-for="role in ['all', 'lecturer', 'student', 'admin']"
           :key="role"
           @click="filters.role = role"
           :class="[
-            'px-4 py-1.5 rounded-md text-sm font-medium transition-colors',
+            'px-4 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
             filters.role === role
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700',
@@ -267,64 +267,149 @@ onMounted(() => {
     </div>
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Thông tin
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Vai trò
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Liên hệ
-            </th>
-            <th
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Trạng thái
-            </th>
-            <th
-              class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Hành động
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-if="loading">
-            <td colspan="5" class="text-center py-8 text-gray-500">Đang tải dữ liệu...</td>
-          </tr>
-          <tr v-else-if="users.length === 0">
-            <td colspan="5" class="text-center py-8 text-gray-500">Không tìm thấy kết quả nào.</td>
-          </tr>
+      <div class="hidden md:block overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Thông tin
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Vai trò
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Liên hệ
+              </th>
+              <th
+                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Trạng thái
+              </th>
+              <th
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Hành động
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-if="loading">
+              <td colspan="5" class="text-center py-8 text-gray-500">Đang tải dữ liệu...</td>
+            </tr>
+            <tr v-else-if="users.length === 0">
+              <td colspan="5" class="text-center py-8 text-gray-500">
+                Không tìm thấy kết quả nào.
+              </td>
+            </tr>
 
-          <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 transition">
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="flex items-center">
-                <div class="flex-shrink-0 h-10 w-10">
-                  <img
-                    class="h-10 w-10 rounded-full object-cover"
-                    :src="user.avatar || 'https://ui-avatars.com/api/?name=' + user.name"
-                    alt=""
+            <tr
+              v-for="user in users"
+              :key="user.id + '-desktop'"
+              class="hover:bg-gray-50 transition"
+            >
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10">
+                    <img
+                      class="h-10 w-10 rounded-full object-cover"
+                      :src="user.avatar || 'https://ui-avatars.com/api/?name=' + user.name"
+                      alt=""
+                    />
+                  </div>
+                  <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                    <div class="text-sm text-gray-500">{{ user.code }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  :class="[
+                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                    user.role === 'admin'
+                      ? 'bg-red-100 text-red-800'
+                      : user.role === 'lecturer'
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-green-100 text-green-800',
+                  ]"
+                >
+                  {{
+                    user.role === 'lecturer'
+                      ? 'Giảng viên'
+                      : user.role === 'admin'
+                        ? 'Quản trị'
+                        : 'Sinh viên'
+                  }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">{{ user.email }}</div>
+                <div class="text-sm text-gray-500">{{ user.phone || '---' }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-center">
+                <button
+                  @click="handleStatusToggle(user)"
+                  :class="[
+                    'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none',
+                    user.is_active ? 'bg-blue-600' : 'bg-gray-200',
+                  ]"
+                >
+                  <span
+                    aria-hidden="true"
+                    :class="[
+                      'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200',
+                      user.is_active ? 'translate-x-5' : 'translate-x-0',
+                    ]"
                   />
-                </div>
-                <div class="ml-4">
-                  <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
-                  <div class="text-sm text-gray-500">{{ user.code }}</div>
-                </div>
+                </button>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button
+                  @click="openEditModal(user)"
+                  class="text-indigo-600 hover:text-indigo-900 mr-3"
+                >
+                  Sửa
+                </button>
+                <button @click="handleDelete(user.id)" class="text-red-600 hover:text-red-900">
+                  Xóa
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="md:hidden">
+        <div v-if="loading" class="p-4 text-center text-gray-500">Đang tải dữ liệu...</div>
+        <div v-else-if="users.length === 0" class="p-4 text-center text-gray-500">
+          Không tìm thấy kết quả nào.
+        </div>
+
+        <div v-else class="space-y-4 p-4 bg-gray-50">
+          <div
+            v-for="user in users"
+            :key="user.id + '-mobile'"
+            class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden"
+          >
+            <div class="flex items-center p-4 border-b border-gray-100">
+              <img
+                class="h-12 w-12 rounded-full object-cover"
+                :src="user.avatar || 'https://ui-avatars.com/api/?name=' + user.name"
+                alt=""
+              />
+              <div class="ml-3 flex-1">
+                <div class="text-sm font-bold text-gray-900">{{ user.name }}</div>
+                <div class="text-xs text-gray-500 font-mono">{{ user.code }}</div>
               </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
               <span
                 :class="[
-                  'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                  'px-2 py-1 text-xs font-semibold rounded-full',
                   user.role === 'admin'
                     ? 'bg-red-100 text-red-800'
                     : user.role === 'lecturer'
@@ -332,50 +417,93 @@ onMounted(() => {
                       : 'bg-green-100 text-green-800',
                 ]"
               >
-                {{
-                  user.role === 'lecturer'
-                    ? 'Giảng viên'
-                    : user.role === 'admin'
-                      ? 'Quản trị'
-                      : 'Sinh viên'
-                }}
+                {{ user.role === 'lecturer' ? 'GV' : user.role === 'admin' ? 'Admin' : 'SV' }}
               </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ user.email }}</div>
-              <div class="text-sm text-gray-500">{{ user.phone || '---' }}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center">
-              <button
-                @click="handleStatusToggle(user)"
-                :class="[
-                  'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none',
-                  user.is_active ? 'bg-blue-600' : 'bg-gray-200',
-                ]"
-              >
-                <span
-                  aria-hidden="true"
+            </div>
+
+            <div class="p-4 space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Email:</span>
+                <span class="text-gray-900 font-medium truncate ml-2 max-w-[200px]">{{
+                  user.email
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">SĐT:</span>
+                <span class="text-gray-900">{{ user.phone || '---' }}</span>
+              </div>
+            </div>
+
+            <div
+              class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-100"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">{{
+                  user.is_active ? 'Hoạt động' : 'Đang khóa'
+                }}</span>
+                <button
+                  @click="handleStatusToggle(user)"
                   :class="[
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200',
-                    user.is_active ? 'translate-x-5' : 'translate-x-0',
+                    'relative inline-flex flex-shrink-0 h-5 w-9 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none',
+                    user.is_active ? 'bg-blue-600' : 'bg-gray-300',
                   ]"
-                />
-              </button>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button
-                @click="openEditModal(user)"
-                class="text-indigo-600 hover:text-indigo-900 mr-3"
-              >
-                Sửa
-              </button>
-              <button @click="handleDelete(user.id)" class="text-red-600 hover:text-red-900">
-                Xóa
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                >
+                  <span
+                    aria-hidden="true"
+                    :class="[
+                      'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200',
+                      user.is_active ? 'translate-x-4' : 'translate-x-0',
+                    ]"
+                  />
+                </button>
+              </div>
+
+              <div class="flex gap-3">
+                <button
+                  @click="openEditModal(user)"
+                  class="text-indigo-600 hover:text-indigo-900 text-sm font-medium flex items-center"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                  Sửa
+                </button>
+                <button
+                  @click="handleDelete(user.id)"
+                  class="text-red-600 hover:text-red-900 text-sm font-medium flex items-center"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  Xóa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
