@@ -102,7 +102,7 @@ class AuthController extends Controller
 
     public function changePassword(ChangePasswordRequest $request)
     {
-        $user = $request->user();        // 1. Kiểm tra mật khẩu cũ có đúng không
+        $user = $request->user();
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'message' => 'Mật khẩu hiện tại không chính xác.',
