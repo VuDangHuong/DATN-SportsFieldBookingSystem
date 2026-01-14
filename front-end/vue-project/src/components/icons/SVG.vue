@@ -1,12 +1,4 @@
-<script setup>
-import { computed } from 'vue'
-
-const props = defineProps({
-  name: { type: String, required: true },
-  class: { type: String, default: 'h-5 w-5' },
-})
-
-// Danh sách toàn bộ icon trong hệ thống
+<script>
 const icons = {
   // --- MENU ICONS ---
   menu: 'M4 6h16M4 12h16M4 18h16',
@@ -27,28 +19,84 @@ const icons = {
     'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
   profile: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
   camera:
-    'M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z', // Gộp 2 path lại
+    'M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z',
   key: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
   'chevron-down':
     'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z',
 
-  // --- BUTTON ICONS (Import, Add, Search...) ---
+  // --- BUTTON ICONS ---
   upload: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12',
   plus: 'M12 4v16m8-8H4',
   search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
-}
 
-const currentPath = computed(() => icons[props.name] || '')
+  // --- COMPLEX ICONS ---
+  eye: {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    path: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`,
+  },
+  'eye-off': {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    path: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.048 10.048 0 01-3.7 3.7m-8.2-15L19 19" />`,
+  },
+  spinner: {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: null,
+    path: `<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>`,
+  },
+}
+</script>
+
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  name: {
+    type: String,
+    required: true,
+    // Validator hoạt động OK vì biến icons giờ đã nằm ở module scope
+    validator: (value) => {
+      return Object.keys(icons).includes(value)
+    },
+  },
+  spin: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+// Logic xử lý computed vẫn truy cập được icons bình thường
+const currentIcon = computed(() => {
+  const icon = icons[props.name]
+
+  if (!icon) return null
+
+  if (typeof icon === 'string') {
+    return {
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      path: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icon}" />`,
+    }
+  }
+
+  return icon
+})
 </script>
 
 <template>
   <svg
+    v-if="currentIcon"
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    :class="props.class"
-  >
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="currentPath" />
-  </svg>
+    class="h-5 w-5"
+    :class="[spin ? 'animate-spin' : '']"
+    :viewBox="currentIcon.viewBox"
+    :fill="currentIcon.fill"
+    :stroke="currentIcon.stroke"
+    v-html="currentIcon.path"
+  ></svg>
 </template>

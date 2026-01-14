@@ -7,7 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user_info')) || null)
   const token = ref(localStorage.getItem('access_token') || '')
   const isAuthenticated = ref(!!token.value)
-
+  const router = useRouter()
   async function login(payload) {
     try {
       const response = await authApi.login(payload)
@@ -18,7 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = data.user
       isAuthenticated.value = true
 
-      // 2. Lưu vào LocalStorage (Để axiosClient lấy được ở Bước 1)
+      //Lưu vào LocalStorage
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('user_info', JSON.stringify(data.user))
 
@@ -34,19 +34,28 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       console.error('Lỗi khi gọi API logout:', error)
     } finally {
-      // 2. Reset State (Pinia)
+      // Reset State
       token.value = ''
       user.value = null
       isAuthenticated.value = false
 
-      // 3. Xóa LocalStorage (Quan trọng)
       localStorage.removeItem('access_token')
       localStorage.removeItem('user_info')
 
-      const router = useRouter()
-      router.push('/login')
+      if (router) {
+        router.push('/login')
+      } else {
+        window.location.href = '/login'
+      }
     }
   }
-
-  return { user, token, isAuthenticated, login, logout }
+  async function changePassword(passwordData) {
+    try {
+      const response = await authApi.changePassword(passwordData)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+  return { user, token, isAuthenticated, login, logout, changePassword }
 })
