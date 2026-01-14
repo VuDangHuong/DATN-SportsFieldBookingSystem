@@ -52,7 +52,6 @@ class AuthController extends Controller
         }
 
         // Lấy thông tin user từ DB
-        // Lưu ý: Phải dùng User ở namespace App\Models\Auth\User
         $user = User::where('email', $request->email)->firstOrFail();
 
         // Kiểm tra xem tài khoản có bị khóa không (is_active)
@@ -75,7 +74,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'avatar' => $user->avatar,
-                'role' => $user->role, // QUAN TRỌNG: Frontend dựa vào đây để redirect
+                'role' => $user->role,
             ]
         ]);
     }
@@ -103,9 +102,7 @@ class AuthController extends Controller
 
     public function changePassword(ChangePasswordRequest $request)
     {
-        $user = $request->user(); // Lấy user đang đăng nhập
-
-        // 1. Kiểm tra mật khẩu cũ có đúng không
+        $user = $request->user();        // 1. Kiểm tra mật khẩu cũ có đúng không
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'message' => 'Mật khẩu hiện tại không chính xác.',
@@ -113,19 +110,19 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // 2. Cập nhật mật khẩu mới
+        //Cập nhật mật khẩu mới
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        // 3. (Tùy chọn) Xóa tất cả các token khác để bắt đăng nhập lại ở thiết bị khác
-        // $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
+        //Xóa tất cả các token khác để bắt đăng nhập lại ở thiết bị khác
+        $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
 
         return response()->json([
             'message' => 'Đổi mật khẩu thành công!'
         ]);
     }
 
-    // --- API 1: Gửi yêu cầu quên mật khẩu ---
+// --- API 1: Gửi yêu cầu quên mật khẩu ---
 public function forgotPassword(Request $request)
 {
     $request->validate([
