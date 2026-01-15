@@ -12,6 +12,7 @@ import MasterData from '@/views/admin/MasterData.vue'
 import SystemConfig from '@/views/admin/SystemConfig.vue'
 import Reports from '@/views/admin/Reports.vue'
 import ChangePasswordForm from '@/views/auth/ChangePasswordForm.vue'
+import ProfileView from '@/components/profile/ProfileView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -64,6 +65,11 @@ const router = createRouter({
           name: 'admin.change-password',
           component: ChangePasswordForm,
           meta: { title: 'Đổi mật khẩu Admin' },
+        },
+        {
+          path: 'profile',
+          name: 'admin-profile',
+          component: ProfileView,
         },
       ],
     },

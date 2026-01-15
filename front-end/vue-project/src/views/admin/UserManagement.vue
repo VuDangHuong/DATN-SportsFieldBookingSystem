@@ -353,9 +353,10 @@ onMounted(userStore.fetchUsers)
           >
             <div class="flex items-center p-4 border-b border-gray-100">
               <img
-                class="h-12 w-12 rounded-full object-cover"
-                :src="user.avatar || 'https://ui-avatars.com/api/?name=' + user.name"
-                alt=""
+                class="h-12 w-12 rounded-full object-cover border border-gray-200"
+                :src="getAvatarUrl(user)"
+                :alt="user.name"
+                @error="(e) => handleImageError(e, user.name)"
               />
               <div class="ml-3 flex-1">
                 <div class="text-sm font-bold text-gray-900">{{ user.name }}</div>
@@ -435,90 +436,59 @@ onMounted(userStore.fetchUsers)
     </div>
 
     <div
-      class="mt-4 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"
+      class="mt-4 flex flex-col items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:flex-row sm:px-6"
       v-if="pagination.last_page > 1"
     >
-      <div class="flex flex-1 justify-between sm:hidden">
-        <button
-          @click="changePage(filters.page - 1)"
-          :disabled="filters.page === 1"
-          class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          Trước
-        </button>
-        <button
-          @click="changePage(filters.page + 1)"
-          :disabled="filters.page === pagination.last_page"
-          class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          Sau
-        </button>
+      <div class="mb-4 sm:mb-0 hidden sm:block">
+        <p class="text-sm text-gray-700">
+          Hiển thị trang
+          <span class="font-medium">{{ filters.page }}</span>
+          trên tổng số
+          <span class="font-medium">{{ pagination.last_page }}</span>
+          trang ({{ pagination.total }} kết quả)
+        </p>
       </div>
 
-      <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-        <div>
-          <p class="text-sm text-gray-700">
-            Hiển thị trang
-            <span class="font-medium">{{ filters.page }}</span>
-            trên tổng số
-            <span class="font-medium">{{ pagination.last_page }}</span>
-            trang ({{ pagination.total }} kết quả)
-          </p>
-        </div>
+      <div class="w-full sm:w-auto flex justify-center sm:justify-end overflow-x-auto pb-2 sm:pb-0">
+        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+          <button
+            @click="changePage(filters.page - 1)"
+            :disabled="filters.page === 1"
+            class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span class="sr-only">Previous</span>
+            <SvgIcon name="chevron-left" class="h-5 w-5" />
+          </button>
 
-        <div>
-          <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-            <button
-              @click="changePage(filters.page - 1)"
-              :disabled="filters.page === 1"
-              class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          <template v-for="(page, index) in visiblePages" :key="index">
+            <span
+              v-if="page === '...'"
+              class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0"
+              >...</span
             >
-              <span class="sr-only">Previous</span>
-              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path
-                  fill-rule="evenodd"
-                  d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-
-            <template v-for="(page, index) in visiblePages" :key="index">
-              <span
-                v-if="page === '...'"
-                class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0"
-                >...</span
-              >
-
-              <button
-                v-else
-                @click="changePage(page)"
-                :class="[
-                  page === filters.page
-                    ? 'relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                    : 'relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0',
-                ]"
-              >
-                {{ page }}
-              </button>
-            </template>
 
             <button
-              @click="changePage(filters.page + 1)"
-              :disabled="filters.page === pagination.last_page"
-              class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              v-else
+              @click="changePage(page)"
+              :class="[
+                page === filters.page
+                  ? 'relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                  : 'relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0',
+              ]"
             >
-              <span class="sr-only">Next</span>
-              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path
-                  fill-rule="evenodd"
-                  d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              {{ page }}
             </button>
-          </nav>
-        </div>
+          </template>
+
+          <button
+            @click="changePage(filters.page + 1)"
+            :disabled="filters.page === pagination.last_page"
+            class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span class="sr-only">Next</span>
+            <SvgIcon name="chevron-right" class="h-5 w-5" />
+          </button>
+        </nav>
       </div>
     </div>
 

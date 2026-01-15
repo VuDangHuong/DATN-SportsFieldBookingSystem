@@ -14,4 +14,10 @@ export const authApi = {
   updateAvatar(formData) {
     return axiosClient.post('auth/update-avatar', formData)
   },
+  getMe() {
+    return axiosClient.get('auth/me')
+  },
+  updateProfile(data) {
+    return axiosClient.post('auth/update-profile', data)
+  },
 }

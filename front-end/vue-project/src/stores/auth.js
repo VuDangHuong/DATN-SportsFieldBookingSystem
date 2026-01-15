@@ -76,5 +76,59 @@ export const useAuthStore = defineStore('auth', () => {
       throw error
     }
   }
-  return { user, token, isAuthenticated, login, logout, changePassword, updateAvatar }
+
+  async function fetchUser() {
+    if (!token.value) return
+
+    try {
+      const response = await authApi.getMe()
+      const userData = response.data
+
+      // Cập nhật State
+      user.value = userData
+      isAuthenticated.value = true
+
+      //Cập nhật LocalStorage
+      localStorage.setItem('user_info', JSON.stringify(userData))
+      return userData
+    } catch (error) {
+      // Nếu lỗi 401 (Token hết hạn hoặc không hợp lệ) -> Logout luôn
+      if (error.response && error.response.status === 401) {
+        token.value = ''
+        user.value = null
+        isAuthenticated.value = false
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user_info')
+        router.push('/login')
+      }
+      throw error
+    }
+  }
+
+  async function updateProfile(profileData) {
+    try {
+      const response = await authApi.updateProfile(profileData)
+      const updatedUser = response.data.data
+      // 1. Cập nhật State
+      user.value = updatedUser
+
+      // 2. Cập nhật LocalStorage
+      localStorage.setItem('user_info', JSON.stringify(updatedUser))
+
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+  return {
+    user,
+    token,
+    isAuthenticated,
+    login,
+    logout,
+    changePassword,
+    updateAvatar,
+    fetchUser,
+    updateProfile,
+  }
 })
