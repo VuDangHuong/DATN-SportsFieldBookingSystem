@@ -11,4 +11,7 @@ export const authApi = {
   changePassword(data) {
     return axiosClient.post('auth/change-password', data)
   },
+  updateAvatar(formData) {
+    return axiosClient.post('auth/update-avatar', formData)
+  },
 }

@@ -4,14 +4,19 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { ref, onMounted, onUnmounted } from 'vue'
 import SvgIcon from '@/components/icons/SVG.vue'
-
+import { getAvatarUrl, handleImageError } from '@/utils/imageHelper'
+import { useUserStore } from '@/stores/admin/user'
+import { storeToRefs } from 'pinia'
+import AvatarModal from '@/components/modal/AvatarModal.vue'
 const authStore = useAuthStore()
 const router = useRouter()
-
+const userStore = useUserStore()
+const { users } = storeToRefs(userStore)
 // --- STATE ---
 const showUserMenu = ref(false)
 const dropdownRef = ref(null)
-const isMobileMenuOpen = ref(false) // Trạng thái mở menu trên mobile
+const isMobileMenuOpen = ref(false)
+const showAvatarModal = ref(false)
 
 // --- LOGIC MOBILE ---
 const toggleMobileMenu = () => {
@@ -93,9 +98,10 @@ onUnmounted(() => {
               class="flex items-center gap-3 focus:outline-none hover:bg-gray-50 px-2 py-1.5 rounded-lg transition duration-200 border border-transparent hover:border-gray-200"
             >
               <img
-                src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff"
-                alt="Avatar"
-                class="w-9 h-9 rounded-full shadow-sm object-cover"
+                class="h-10 w-10 rounded-full object-cover"
+                :src="getAvatarUrl(authStore.user)"
+                :alt="authStore.user?.name"
+                @error="(e) => handleImageError(e, authStore.user?.name)"
               />
 
               <div class="text-left hidden md:block">
@@ -131,7 +137,7 @@ onUnmounted(() => {
                 </button>
 
                 <button
-                  @click="navigateTo('/admin/update-avatar')"
+                  @click="((showAvatarModal = true), (showUserMenu = false))"
                   class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 flex items-center"
                 >
                   <SvgIcon name="camera" class="h-4 w-4 mr-3" />
@@ -167,6 +173,8 @@ onUnmounted(() => {
           </transition>
         </router-view>
       </main>
+
+      <AvatarModal :show="showAvatarModal" @close="showAvatarModal = false" />
     </div>
   </div>
 </template>

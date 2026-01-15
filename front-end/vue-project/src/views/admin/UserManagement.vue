@@ -1,79 +1,93 @@
 <script setup>
-import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { useUserStore } from '@/stores/admin/user' // 1. Import Store
-import { storeToRefs } from 'pinia' // 2. Import helper của Pinia
-import UserForm from './components/UserForm.vue'
+import { ref, onMounted, watch, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+
+import { useUserStore } from '@/stores/admin/user'
+import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
+import SvgIcon from '@/components/icons/SVG.vue'
+import UserForm from './components/UserForm.vue'
+import { getAvatarUrl, handleImageError } from '@/utils/imageHelper'
 
-const toast = useToastStore()
-// --- KẾT NỐI STORE ---
+/* =======================
+   STORES
+======================= */
 const userStore = useUserStore()
-// Lấy State (Dữ liệu) từ Store
-const { users, loading, pagination, filters } = storeToRefs(userStore)
-// Lấy Actions (Hàm) từ Store
-const {
-  fetchUsers,
-  createUser,
-  updateUser,
-  deleteUser,
-  toggleStatus,
-  importUsers,
-  setPage,
-  setFilterRole,
-} = userStore
+const authStore = useAuthStore()
+const toast = useToastStore()
 
-// --- LOCAL STATE (Biến cục bộ dùng cho giao diện này) ---
-const showImportModal = ref(false)
-const importFile = ref(null)
+const { users, loading, pagination, filters } = storeToRefs(userStore)
+
+/* =======================
+   LOCAL STATE
+======================= */
 const showFormModal = ref(false)
+const showImportModal = ref(false)
 const isEditing = ref(false)
 const selectedUser = ref(null)
+const importFile = ref(null)
 
-// --- LOGIC PHÂN TRANG THÔNG MINH ---
+/* =======================
+   WATCHERS
+======================= */
+
+// Đồng bộ avatar user đăng nhập trong bảng
+watch(
+  () => authStore.user?.avatar,
+  (avatar) => {
+    if (!authStore.user || !avatar) return
+
+    const user = users.value.find((u) => u.id === authStore.user.id)
+    if (user) user.avatar = avatar
+  },
+)
+
+// Lọc theo role
+watch(() => filters.value.role, userStore.setFilterRole)
+
+/* =======================
+   COMPUTED
+======================= */
+
+// Pagination thông minh
 const visiblePages = computed(() => {
-  const { current_page, last_page } = pagination.value // Lưu ý: dùng .value vì lấy từ storeToRefs
+  const { current_page, last_page } = pagination.value
   const delta = 1
-  const range = []
-  const rangeWithDots = []
-  let l
+  const pages = []
 
   for (let i = 1; i <= last_page; i++) {
-    if (i === 1 || i === last_page || (i >= current_page - delta && i <= current_page + delta)) {
-      range.push(i)
+    if (i === 1 || i === last_page || Math.abs(i - current_page) <= delta) {
+      pages.push(i)
     }
   }
 
-  for (let i of range) {
-    if (l) {
-      if (i - l === 2) {
-        rangeWithDots.push(l + 1)
-      } else if (i - l !== 1) {
-        rangeWithDots.push('...')
-      }
-    }
-    rangeWithDots.push(i)
-    l = i
-  }
-  return rangeWithDots
+  return pages.reduce((acc, page, i) => {
+    if (i && page - pages[i - 1] > 1) acc.push('...')
+    acc.push(page)
+    return acc
+  }, [])
 })
 
-// --- HELPER FUNCTIONS ---
-function debounce(func, timeout = 300) {
+/* =======================
+   HELPERS
+======================= */
+const debounce = (fn, delay = 300) => {
   let timer
   return (...args) => {
     clearTimeout(timer)
-    timer = setTimeout(() => {
-      func.apply(this, args)
-    }, timeout)
+    timer = setTimeout(() => fn(...args), delay)
   }
 }
 
+//HANDLERS
+
+// Search
 const handleSearch = debounce(() => {
-  filters.value.page = 1 // Reset về trang 1 khi search
-  fetchUsers()
+  filters.value.page = 1
+  userStore.fetchUsers()
 }, 500)
 
-// --- XỬ LÝ MODAL FORM ---
+// Modal
 const openCreateModal = () => {
   isEditing.value = false
   selectedUser.value = {}
@@ -86,85 +100,61 @@ const openEditModal = (user) => {
   showFormModal.value = true
 }
 
-const handleSaveUser = async (formData) => {
-  let result
-  // Gọi hàm từ Store thay vì gọi API trực tiếp
-  if (isEditing.value) {
-    result = await updateUser(formData.id, formData)
-  } else {
-    result = await createUser(formData)
-  }
+// Save
+const handleSaveUser = async (data) => {
+  const action = isEditing.value ? userStore.updateUser(data.id, data) : userStore.createUser(data)
 
-  if (result.success) {
-    toast.success(result.message)
-    showFormModal.value = false
-  } else {
-    toast.error(result.message)
-  }
+  const result = await action
+
+  result.success ? toast.success(result.message) : toast.error(result.message)
+
+  if (result.success) showFormModal.value = false
 }
 
-// --- CÁC HÀM BẠN ĐANG THIẾU (Wrapper gọi Store) ---
-
-// 1. Xử lý xóa (handleDelete)
+// Delete
 const handleDelete = async (id) => {
   if (!confirm('Bạn có chắc muốn xóa người dùng này?')) return
-  const result = await deleteUser(id)
-  if (result.success) {
-    toast.success(result.message)
-    showFormModal.value = false
-  } else {
-    toast.error(result.message || 'Xóa thất bại')
-  }
+
+  const result = await userStore.deleteUser(id)
+  result.success ? toast.success(result.message) : toast.error(result.message)
 }
 
-// 2. Xử lý đổi trạng thái (handleStatusToggle)
+// Status
 const handleStatusToggle = async (user) => {
   try {
-    await toggleStatus(user)
+    await userStore.toggleStatus(user)
     toast.success('Đã cập nhật trạng thái')
-  } catch (e) {
-    toast.error('Không thể thay đổi trạng thái.')
+  } catch {
+    toast.error('Không thể thay đổi trạng thái')
   }
 }
 
-// 3. Xử lý Import (handleImportFile)
-const handleImportFile = async () => {
-  if (!importFile.value) return alert('Vui lòng chọn file')
-  const formData = new FormData()
-  formData.append('file', importFile.value)
-
-  const result = await importUsers(formData)
-  if (result.success) {
-    toast.success(result.message)
-    showImportModal.value = false
-  } else {
-    toast.error(result.message)
-  }
-}
-
+// Import
 const onFileChange = (e) => {
   importFile.value = e.target.files[0]
 }
 
-// Hàm đổi trang
+const handleImportFile = async () => {
+  if (!importFile.value) return alert('Vui lòng chọn file')
+
+  const formData = new FormData()
+  formData.append('file', importFile.value)
+
+  const result = await userStore.importUsers(formData)
+
+  result.success ? toast.success(result.message) : toast.error(result.message)
+
+  if (result.success) showImportModal.value = false
+}
+
+// Pagination
 const changePage = (page) => {
   if (page >= 1 && page <= pagination.value.last_page) {
-    setPage(page) // Gọi hàm setPage của Store
+    userStore.setPage(page)
   }
 }
 
-// Watch Role (Cập nhật qua Store helper)
-watch(
-  () => filters.value.role,
-  (newRole) => {
-    setFilterRole(newRole)
-  },
-)
-
-// Khởi tạo
-onMounted(() => {
-  fetchUsers()
-})
+onMounted(userStore.fetchUsers)
 </script>
 
 <template>
@@ -176,40 +166,14 @@ onMounted(() => {
           @click="showImportModal = true"
           class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-            />
-          </svg>
+          <SvgIcon name="upload" class="h-5 w-5 mr-2" />
           Import Excel
         </button>
         <button
           @click="openCreateModal"
           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+          <SvgIcon name="plus" class="h-5 w-5 mr-2" />
           Thêm mới
         </button>
       </div>
@@ -241,20 +205,7 @@ onMounted(() => {
       </div>
       <div class="flex-1 min-w-[200px] relative">
         <span class="absolute left-3 top-2.5 text-gray-400">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+          <SvgIcon name="search" class="h-5 w-5" />
         </span>
         <input
           v-model="filters.search"
@@ -318,8 +269,9 @@ onMounted(() => {
                   <div class="flex-shrink-0 h-10 w-10">
                     <img
                       class="h-10 w-10 rounded-full object-cover"
-                      :src="user.avatar || 'https://ui-avatars.com/api/?name=' + user.name"
-                      alt=""
+                      :src="getAvatarUrl(user)"
+                      :alt="user.name"
+                      @error="(e) => handleImageError(e, user.name)"
                     />
                   </div>
                   <div class="ml-4">
@@ -374,9 +326,11 @@ onMounted(() => {
                   @click="openEditModal(user)"
                   class="text-indigo-600 hover:text-indigo-900 mr-3"
                 >
+                  <SvgIcon name="edit" class="h-4 w-4 mr-1" />
                   Sửa
                 </button>
                 <button @click="handleDelete(user.id)" class="text-red-600 hover:text-red-900">
+                  <SvgIcon name="trash" class="h-4 w-4 mr-1" />
                   Xóa
                 </button>
               </td>
@@ -463,40 +417,14 @@ onMounted(() => {
                   @click="openEditModal(user)"
                   class="text-indigo-600 hover:text-indigo-900 text-sm font-medium flex items-center"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
+                  <SvgIcon name="edit" class="h-4 w-4 mr-1" />
                   Sửa
                 </button>
                 <button
                   @click="handleDelete(user.id)"
                   class="text-red-600 hover:text-red-900 text-sm font-medium flex items-center"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
+                  <SvgIcon name="trash" class="h-4 w-4 mr-1" />
                   Xóa
                 </button>
               </div>

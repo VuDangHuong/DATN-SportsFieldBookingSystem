@@ -57,5 +57,24 @@ export const useAuthStore = defineStore('auth', () => {
       throw error
     }
   }
-  return { user, token, isAuthenticated, login, logout, changePassword }
+
+  async function updateAvatar(formData) {
+    try {
+      //Gọi API
+      const response = await authApi.updateAvatar(formData)
+
+      // Cập nhật State trong Pinia
+      // Kiểm tra nếu user tồn tại thì gán avatar mới
+      if (user.value) {
+        user.value.avatar = response.data.avatar
+      }
+
+      localStorage.setItem('user_info', JSON.stringify(user.value))
+
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+  return { user, token, isAuthenticated, login, logout, changePassword, updateAvatar }
 })
