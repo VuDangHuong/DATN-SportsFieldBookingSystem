@@ -130,6 +130,26 @@ class AuthController extends Controller
         return response()->json($request->user());
     }
 
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'name'  => 'sometimes|required|string|max:255',
+            'phone' => 'nullable|string|max:15',
+        ], [
+            'email.unique' => 'Email này đã tồn tại trong hệ thống.',
+            'phone.max'    => 'Số điện thoại không được quá 15 ký tự.'
+        ]);
+        $user->fill($validated);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Cập nhật thông tin thành công!',
+            'data'    => $user
+        ]);
+    }
     public function changePassword(ChangePasswordRequest $request)
     {
         $user = $request->user();
