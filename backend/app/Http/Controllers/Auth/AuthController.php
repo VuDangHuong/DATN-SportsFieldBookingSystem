@@ -99,35 +99,31 @@ class AuthController extends Controller
      */
     public function updateAvatarById(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'avatar'  => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        $user = $request->user();
 
-        // 2. Tìm User thật từ Database dựa vào ID gửi lên
-        $user = User::find($request->user_id);
-
-        //Xử lý Upload Avatar
+        // Xử lý lưu ảnh
         if ($request->hasFile('avatar')) {
-            // Xóa ảnh cũ nếu tồn tại
+            // Xóa ảnh cũ nếu có
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
 
+            // Lưu ảnh mới vào thư mục 'avatars' trong ổ đĩa public
             $path = $request->file('avatar')->store('avatars', 'public');
 
+            // Cập nhật Database
             $user->avatar = $path;
             $user->save();
+            return response()->json([
+                'message' => 'Cập nhật ảnh đại diện thành công!',
+                'avatar' => $path
+            ]);
         }
-
-        return response()->json([
-            'message' => 'Cập nhật ảnh đại diện thành công!',
-            'user'    => $user 
-        ]);
+        return response()->json(['message' => 'Vui lòng chọn ảnh.'], 400);
     }
     public function me(Request $request)
     {
